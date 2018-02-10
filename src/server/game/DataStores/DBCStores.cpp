@@ -689,7 +689,7 @@ void LoadDBCStores(const std::string& dataPath)
 
         SpellDifficultyEntry newEntry;
         memset(newEntry.SpellID, 0, 4*sizeof(uint32));
-        for (uint32 x = 0; x < MAX_DIFFICULTY; ++x)
+        for (uint32 x = 0; x < 4; ++x)
         {
             if (spellDiff->SpellID[x] <= 0 || !sSpellStore.LookupEntry(spellDiff->SpellID[x]))
             {
@@ -704,7 +704,7 @@ void LoadDBCStores(const std::string& dataPath)
         if (newEntry.SpellID[0] <= 0 || newEntry.SpellID[1] <= 0)//id0-1 must be always set!
             continue;
 
-        for (uint32 x = 0; x < MAX_DIFFICULTY; ++x)
+        for (uint32 x = 0; x < 4; ++x)
             sSpellMgr->SetSpellDifficultyId(uint32(newEntry.SpellID[x]), spellDiff->ID);
     }
 
@@ -1179,33 +1179,49 @@ std::list<uint32> GetSpellsForLevels(uint32 classId, uint32 raceMask, uint32 spe
     return spellList;
 }
 
-MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty)
+MapDifficulty const* GetMapDifficultyData(uint32 mapId, DifficultyID difficulty)
 {
     MapDifficultyMap::const_iterator itr = sMapDifficultyMap.find(MAKE_PAIR32(mapId, difficulty));
     return itr != sMapDifficultyMap.end() ? &itr->second : NULL;
 }
 
-MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, Difficulty &difficulty)
+MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, DifficultyID &difficulty)
 {
     uint32 tmpDiff = difficulty;
-    MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff));
+
+    MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff));
     if (!mapDiff)
     {
-        if (tmpDiff > RAID_DIFFICULTY_25MAN_NORMAL) // heroic, downscale to normal
-            tmpDiff -= 2;
-        else
-            tmpDiff -= 1;   // any non-normal mode for raids like tbc (only one mode)
-
-        // pull new data
-        mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff)); // we are 10 normal or 25 normal
-        if (!mapDiff)
+        switch (tmpDiff)
         {
-            tmpDiff -= 1;
-            mapDiff = GetMapDifficultyData(mapId, Difficulty(tmpDiff)); // 10 normal
+        case DIFFICULTY_HEROIC:
+            tmpDiff = 1;
+            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Dungeon normal
+            break;
+        case DIFFICULTY_CHALLENGE:
+            tmpDiff = 2;
+            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Dungeon Heroic
+            break;
+        case DIFFICULTY_10MAN_HEROIC:
+            tmpDiff = 3;
+            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // 10man normal
+            break;
+        case DIFFICULTY_25MAN_HEROIC:
+        case DIFFICULTY_25MAN_LFR:
+            tmpDiff = 4;
+            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // 25man normal
+            break;
+        case DIFFICULTY_SCE_HEROIC:
+            tmpDiff = 12;
+            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Scenario normal
+            break;
+        default:
+            tmpDiff = 0;
+            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Scenario normal
+            break;
         }
     }
-
-    difficulty = Difficulty(tmpDiff);
+    difficulty = DifficultyID(tmpDiff);
     return mapDiff;
 }
 
@@ -1432,7 +1448,7 @@ DigsitePOIPolygon const* GetDigsitePOIPolygon(uint32 digsiteId)
 }
 
 /// Returns LFGDungeonEntry for a specific map and difficulty. Will return first found entry if multiple dungeons use the same map (such as Scarlet Monastery)
-LFGDungeonEntry const* GetLFGDungeon(uint32 mapId, Difficulty difficulty)
+LFGDungeonEntry const* GetLFGDungeon(uint32 mapId, DifficultyID difficulty)
 {
     for (uint32 i = 0; i < sLFGDungeonStore.GetNumRows(); ++i)
     {
@@ -1440,7 +1456,7 @@ LFGDungeonEntry const* GetLFGDungeon(uint32 mapId, Difficulty difficulty)
         if (!dungeon)
             continue;
 
-        if (dungeon->map == int32(mapId) && Difficulty(dungeon->difficulty) == difficulty)
+        if (dungeon->map == int32(mapId) && DifficultyID(dungeon->difficulty) == difficulty)
             return dungeon;
     }
 

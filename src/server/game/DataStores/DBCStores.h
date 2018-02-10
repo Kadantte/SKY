@@ -72,8 +72,8 @@ uint32 GetSkillIdByClass(uint32 classId);
 std::list<uint32> GetSpellsForLevels(uint32 classId, uint32 raceMask, uint32 specializationId, uint32 minLevel, uint32 maxLevel);
 
 typedef std::map<uint32/*pair32(map, diff)*/, MapDifficulty> MapDifficultyMap;
-MapDifficulty const* GetMapDifficultyData(uint32 mapId, Difficulty difficulty);
-MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, Difficulty &difficulty);
+MapDifficulty const* GetMapDifficultyData(uint32 mapId, DifficultyID difficulty);
+MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, DifficultyID &difficulty);
 
 uint32 const* /*[MAX_TALENT_TABS]*/ GetClassSpecializations(uint8 classId);
 
@@ -89,7 +89,7 @@ typedef std::map<uint32 /*digsiteId*/, DigsitePOIPolygon> DigsitePOIPolygonConta
 DigsitePOIPolygon const* GetDigsitePOIPolygon(uint32 digsiteId);
 
 uint32 GetPowerIndexByClass(uint32 powerType, uint32 classId);
-LFGDungeonEntry const* GetLFGDungeon(uint32 mapId, Difficulty difficulty);
+LFGDungeonEntry const* GetLFGDungeon(uint32 mapId, DifficultyID difficulty);
 
 extern SpecializationOverrideSpellsMap sSpecializationOverrideSpellMap;
 extern DBCStorage <AchievementEntry>             sAchievementStore;

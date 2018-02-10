@@ -1391,7 +1391,7 @@ class Player : public Unit, public GridObject<Player>
     void SendInitialPacketsBeforeAddToMap();
     void SendInitialPacketsAfterAddToMap();
     void SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8 arg = 0);
-    void SendInstanceResetWarning(uint32 mapid, Difficulty difficulty, uint32 time);
+    void SendInstanceResetWarning(uint32 mapid, DifficultyID difficulty, uint32 time);
 
     bool CanInteractWithQuestGiver(Object* questGiver);
     Creature* GetNPCIfCanInteractWith(uint64 guid, uint32 npcflagmask);
@@ -2393,27 +2393,27 @@ class Player : public Unit, public GridObject<Player>
         return 0;
     }
 
-    Difficulty GetDifficulty(bool isRaid) const
+    DifficultyID GetDifficulty(bool isRaid) const
     {
         return isRaid ? m_raidDifficulty : m_dungeonDifficulty;
     }
-    Difficulty GetDungeonDifficulty() const
+    DifficultyID GetDungeonDifficulty() const
     {
         return m_dungeonDifficulty;
     }
-    Difficulty GetRaidDifficulty() const
+    DifficultyID GetRaidDifficulty() const
     {
         return m_raidDifficulty;
     }
-    Difficulty GetStoredRaidDifficulty() const
+    DifficultyID GetStoredRaidDifficulty() const
     {
         return m_raidMapDifficulty;
     } // only for use in difficulty packet after exiting to raid map
-    void SetDungeonDifficulty(Difficulty dungeon_difficulty)
+    void SetDungeonDifficulty(DifficultyID dungeon_difficulty)
     {
         m_dungeonDifficulty = dungeon_difficulty;
     }
-    void SetRaidDifficulty(Difficulty raid_difficulty)
+    void SetRaidDifficulty(DifficultyID raid_difficulty)
     {
         m_raidDifficulty = raid_difficulty;
     }
@@ -3006,15 +3006,15 @@ class Player : public Unit, public GridObject<Player>
     uint32 m_HomebindTimer;
     bool m_InstanceValid;
     // permanent binds and solo binds by difficulty
-    BoundInstancesMap m_boundInstances [MAX_DIFFICULTY];
-    InstancePlayerBind* GetBoundInstance(uint32 mapid, Difficulty difficulty);
-    BoundInstancesMap& GetBoundInstances(Difficulty difficulty)
+    BoundInstancesMap m_boundInstances [14];
+    InstancePlayerBind* GetBoundInstance(uint32 mapid, DifficultyID difficulty);
+    BoundInstancesMap& GetBoundInstances(DifficultyID difficulty)
     {
         return m_boundInstances [difficulty];
     }
     InstanceSave* GetInstanceSave(uint32 mapid, bool raid);
-    void UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload = false);
-    void UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficulty, bool unload = false);
+    void UnbindInstance(uint32 mapid, DifficultyID difficulty, bool unload = false);
+    void UnbindInstance(BoundInstancesMap::iterator &itr, DifficultyID difficulty, bool unload = false);
     InstancePlayerBind* BindToInstance(InstanceSave* save, bool permanent, bool load = false);
     void BindToInstance();
     void SetPendingBind(uint32 instanceId, uint32 bindTimer);
@@ -3437,9 +3437,9 @@ class Player : public Unit, public GridObject<Player>
     uint32 m_nextSave;
     time_t m_speakTime;
     uint32 m_speakCount;
-    Difficulty m_dungeonDifficulty;
-    Difficulty m_raidDifficulty;
-    Difficulty m_raidMapDifficulty;
+    DifficultyID m_dungeonDifficulty;
+    DifficultyID m_raidDifficulty;
+    DifficultyID m_raidMapDifficulty;
 
     uint32 m_atLoginFlags;
 
