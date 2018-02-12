@@ -235,7 +235,7 @@ BattlegroundMap* MapInstanced::CreateBattleground(uint32 InstanceId, Battlegroun
     if (bracketEntry)
         spawnMode = bracketEntry->difficulty;
     else
-        spawnMode = DIFFICUTLY_NONE;
+        spawnMode = 0;
 
     BattlegroundMap* map = new BattlegroundMap(GetId(), GetGridExpiry(), InstanceId, this, spawnMode);
     ASSERT(map->IsBattlegroundOrArena());

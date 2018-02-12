@@ -144,7 +144,7 @@ void LoadDisables()
                             flags -= RAID_STATUSFLAG_10MAN_HEROIC;
                         if (flags & RAID_STATUSFLAG_25MAN_HEROIC && !GetMapDifficultyData(entry, DIFFICULTY_25MAN_HEROIC))
                             flags -= RAID_STATUSFLAG_25MAN_HEROIC;
-                        if (flags & RAID_STATUSFLAG_10MAN_FLEX && !GetMapDifficultyData(entry, RAID_DIFFICULTY_FLEX))
+                        if (flags & RAID_STATUSFLAG_10MAN_FLEX && !GetMapDifficultyData(entry, DIFFICULTY_FLEX))
                             flags -= RAID_STATUSFLAG_10MAN_FLEX;
                         if (flags & RAID_STATUSFLAG_25MAN_LFR && !GetMapDifficultyData(entry, DIFFICULTY_25MAN_LFR))
                             flags -= RAID_STATUSFLAG_25MAN_LFR;

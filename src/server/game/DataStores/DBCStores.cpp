@@ -89,6 +89,7 @@ DBCStorage <CriteriaTreeEntry> sCriteriaTreeStore(CriteriaTreefmt);
 uint32 PowersByClass[MAX_CLASSES][MAX_POWERS];
 
 DBCStorage <DestructibleModelDataEntry> sDestructibleModelDataStore(DestructibleModelDatafmt);
+DBCStorage <DifficultyEntry> sDifficultyStore(Difficultyfmt);
 DBCStorage <DungeonEncounterEntry> sDungeonEncounterStore(DungeonEncounterfmt);
 DBCStorage <DurabilityQualityEntry> sDurabilityQualityStore(DurabilityQualityfmt);
 DBCStorage <DurabilityCostsEntry> sDurabilityCostsStore(DurabilityCostsfmt);
@@ -397,6 +398,7 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sCriteriaStore,               dbcPath, "Criteria.dbc");//18414
     LoadDBC(availableDbcLocales, bad_dbc_files, sCriteriaTreeStore,           dbcPath, "CriteriaTree.dbc");//18414
     LoadDBC(availableDbcLocales, bad_dbc_files, sDestructibleModelDataStore,  dbcPath, "DestructibleModelData.dbc");//15595
+    LoadDBC(availableDbcLocales, bad_dbc_files, sDifficultyStore,             dbcPath, "Difficulty.dbc"); // 18414
     LoadDBC(availableDbcLocales, bad_dbc_files, sDungeonEncounterStore,       dbcPath, "DungeonEncounter.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sDurabilityCostsStore,        dbcPath, "DurabilityCosts.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sDurabilityQualityStore,      dbcPath, "DurabilityQuality.dbc");//15595
@@ -483,10 +485,10 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sMapStore,                    dbcPath, "Map.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sMapDifficultyStore,          dbcPath, "MapDifficulty.dbc");//15595
     // fill data
-    sMapDifficultyMap[MAKE_PAIR32(0, 0)] = MapDifficulty(0, 0, false);//map 0 is missingg from MapDifficulty.dbc use this till its ported to sql
+    sMapDifficultyMap[0][0] = MapDifficulty(DIFFICULTY_NONE, 0, 0, false);//map 0 is missingg from MapDifficulty.dbc use this till its ported to sql
     for (uint32 i = 0; i < sMapDifficultyStore.GetNumRows(); ++i)
         if (MapDifficultyEntry const* entry = sMapDifficultyStore.LookupEntry(i))
-            sMapDifficultyMap[MAKE_PAIR32(entry->MapId, entry->Difficulty)] = MapDifficulty(entry->resetTime, entry->maxPlayers, entry->areaTriggerText[0] > 0);
+            sMapDifficultyMap[entry->MapId][entry->Difficulty] = MapDifficulty(entry->Difficulty, entry->resetTime, entry->maxPlayers, entry->areaTriggerText[0] > 0);
     sMapDifficultyStore.Clear();
 
     LoadDBC(availableDbcLocales, bad_dbc_files, sMountCapabilityStore,        dbcPath, "MountCapability.dbc");//15595
@@ -1178,49 +1180,60 @@ std::list<uint32> GetSpellsForLevels(uint32 classId, uint32 raceMask, uint32 spe
     }
     return spellList;
 }
+MapDifficulty const* GetDefaultMapDifficulty(uint32 mapId)
+{
+    auto itr = sMapDifficultyMap.find(mapId);
+    if (itr == sMapDifficultyMap.end())
+        return nullptr;
+
+    if (itr->second.empty())
+        return nullptr;
+
+        for (auto& p : itr->second)
+        {
+            DifficultyEntry const* difficulty = sDifficultyStore.LookupEntry(p.first);
+            if (!difficulty)
+                continue;
+
+            if (difficulty->flags & 0x06)
+                return &p.second;
+        }
+        
+        return &itr->second.begin()->second;
+}
 
 MapDifficulty const* GetMapDifficultyData(uint32 mapId, DifficultyID difficulty)
 {
-    MapDifficultyMap::const_iterator itr = sMapDifficultyMap.find(MAKE_PAIR32(mapId, difficulty));
-    return itr != sMapDifficultyMap.end() ? &itr->second : NULL;
+    auto itr = sMapDifficultyMap.find(mapId);
+        if (itr == sMapDifficultyMap.end())
+            return nullptr;
+    
+    auto diffItr = itr->second.find(difficulty);
+        if (diffItr == itr->second.end())
+            return nullptr;
+    
+    return &diffItr->second;
 }
 
 MapDifficulty const* GetDownscaledMapDifficultyData(uint32 mapId, DifficultyID &difficulty)
 {
-    uint32 tmpDiff = difficulty;
+    DifficultyEntry const* diffEntry = sDifficultyStore.LookupEntry(difficulty);
+    if (!diffEntry)
+        return GetDefaultMapDifficulty(mapId);
 
+    uint32 tmpDiff = difficulty;
     MapDifficulty const* mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff));
-    if (!mapDiff)
+    while (!mapDiff)
     {
-        switch (tmpDiff)
-        {
-        case DIFFICULTY_HEROIC:
-            tmpDiff = 1;
-            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Dungeon normal
-            break;
-        case DIFFICULTY_CHALLENGE:
-            tmpDiff = 2;
-            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Dungeon Heroic
-            break;
-        case DIFFICULTY_10MAN_HEROIC:
-            tmpDiff = 3;
-            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // 10man normal
-            break;
-        case DIFFICULTY_25MAN_HEROIC:
-        case DIFFICULTY_25MAN_LFR:
-            tmpDiff = 4;
-            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // 25man normal
-            break;
-        case DIFFICULTY_SCE_HEROIC:
-            tmpDiff = 12;
-            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Scenario normal
-            break;
-        default:
-            tmpDiff = 0;
-            mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff)); // Scenario normal
-            break;
-        }
+        tmpDiff = diffEntry->DownscaleID;
+        diffEntry = sDifficultyStore.LookupEntry(tmpDiff);
+        if (!diffEntry)
+            return GetDefaultMapDifficulty(mapId);
+
+        // pull new data
+        mapDiff = GetMapDifficultyData(mapId, DifficultyID(tmpDiff));
     }
+
     difficulty = DifficultyID(tmpDiff);
     return mapDiff;
 }

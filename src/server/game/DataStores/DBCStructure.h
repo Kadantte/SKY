@@ -1282,6 +1282,31 @@ struct DestructibleModelDataEntry
     //uint32  Unk8;
 };
 
+struct DifficultyEntry
+{
+    uint32 DiffID;
+    uint32 DownscaleID;
+    //uint32 Type;
+    //uint32
+    //uint32
+    //uint32 SpawnMode;
+    uint32 flags;
+    //
+    //
+    //
+    //
+    //
+
+};
+
+enum diffflag
+{
+    DIFFICULTY_FLAG_CAN_SELECT = 0x04, // Player can select this difficulty in dropdown menu
+    DIFFICULTY_FLAG_HEROIC = 0x05,
+    DIFFICULTY_FLAG_DEFAULT = 0x06,
+    DIFFICULTY_FLAG_CHALLENGE_MODE = 0x0D,
+};
+
 struct DungeonEncounterEntry
 {
     uint32 id;                                              // 0        unique id
@@ -2864,9 +2889,11 @@ typedef std::map<uint32, VectorArray> NameGenVectorArraysMap;
 // Structures not used for casting to loaded DBC data and not required then packing
 struct MapDifficulty
 {
-    MapDifficulty() : resetTime(0), maxPlayers(0), hasErrorMessage(false) { }
-    MapDifficulty(uint32 _resetTime, uint32 _maxPlayers, bool _hasErrorMessage) : resetTime(_resetTime), maxPlayers(_maxPlayers), hasErrorMessage(_hasErrorMessage) { }
-
+    MapDifficulty() : DifficultyID(0), resetTime(0), maxPlayers(0), hasErrorMessage(false) { }
+    MapDifficulty(uint32 difficultyID, uint32 _resetTime, uint32 _maxPlayers, bool _hasErrorMessage) 
+        : DifficultyID(difficultyID), resetTime(_resetTime), maxPlayers(_maxPlayers), hasErrorMessage(_hasErrorMessage) { }
+    
+    uint32 DifficultyID;
     uint32 resetTime;
     uint32 maxPlayers;
     bool hasErrorMessage;
