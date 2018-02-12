@@ -363,7 +363,7 @@ bool IsDisabledFor(DisableType type, uint32 entry, Unit const* unit, uint8 flags
                 if (mapEntry->IsDungeon())
                 {
                     uint8 disabledModes = itr->second.flags;
-                    DifficultyID targetDifficulty = player->GetDifficulty(mapEntry->IsRaid());
+                    DifficultyID targetDifficulty = player->GetDifficulty(mapEntry);
                     GetDownscaledMapDifficultyData(entry, targetDifficulty);
                     switch (targetDifficulty)
                     {

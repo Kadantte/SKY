@@ -18113,7 +18113,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
         // fix crash (because of if (Map* map = _FindMap(instanceId)) in MapInstanced::CreateInstance)
         if (instanceId)
-            if (InstanceSave* save = GetInstanceSave(mapId, mapEntry->IsRaid()))
+            if (InstanceSave* save = GetInstanceSave(mapId/*, mapEntry->IsRaid()*/))
                 if (save->GetInstanceId() != instanceId)
                     instanceId = 0;
     }
@@ -18168,7 +18168,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     }
 
     SetMap(map);
-    StoreRaidMapDifficulty();
+    //StoreRaidMapDifficulty();
 
     // randomize first save time in range [CONFIG_INTERVAL_SAVE] around [CONFIG_INTERVAL_SAVE]
     // this must help in case next save after mass player load after server startup
@@ -19526,9 +19526,10 @@ InstancePlayerBind* Player::GetBoundInstance(uint32 mapid, DifficultyID difficul
         return NULL;
 }
 
-InstanceSave* Player::GetInstanceSave(uint32 mapid, bool raid)
+InstanceSave* Player::GetInstanceSave(uint32 mapid)
 {
-    InstancePlayerBind* pBind = GetBoundInstance(mapid, GetDifficulty(raid));
+    MapEntry const* mapEntry = sMapStore.LookupEntry(mapid);
+    InstancePlayerBind* pBind = GetBoundInstance(mapid, GetDifficulty(mapEntry));
     InstanceSave* pSave = pBind ? pBind->save : NULL;
     if (!pBind || !pBind->perm)
         if (Group* group = GetGroup())
@@ -19800,7 +19801,7 @@ bool Player::Satisfy(AccessRequirement const* ar, uint32 target_map, bool report
             if (!leader || !leader->HasAchieved(ar->achievement))
                 missingAchievement = ar->achievement;
 
-        DifficultyID target_difficulty = GetDifficulty(mapEntry->IsRaid());
+        DifficultyID target_difficulty = GetDifficulty(mapEntry/*->IsRaid()*/);
         MapDifficulty const* mapDiff = GetDownscaledMapDifficultyData(target_map, target_difficulty);
         if (LevelMin || LevelMax || missingItem || missingQuest || missingAchievement)
         {
@@ -21136,7 +21137,7 @@ void Player::SendExplorationExperience(uint32 Area, uint32 Experience)
     GetSession()->SendPacket(&data);
 }
 
-void Player::SendDungeonDifficulty(bool IsInGroup)
+void Player::SendDungeonDifficulty(/*bool IsInGroup*/)
 {
     WorldPacket data(SMSG_SET_DUNGEON_DIFFICULTY, 4);
     data << uint32(GetDungeonDifficulty());
@@ -21162,7 +21163,9 @@ void Player::ResetInstances(uint8 method, bool isRaid)
     // method can be INSTANCE_RESET_ALL, INSTANCE_RESET_CHANGE_DIFFICULTY, INSTANCE_RESET_GROUP_JOIN
 
     // we assume that when the difficulty changes, all instances that can be reset will be
-    DifficultyID diff = GetDifficulty(isRaid);
+    DifficultyID diff = GetDungeonDifficulty();
+    if (isRaid)
+        diff = GetRaidDifficulty();
 
     for (BoundInstancesMap::iterator itr = m_boundInstances[diff].begin(); itr != m_boundInstances[diff].end();)
     {
@@ -24288,14 +24291,11 @@ void Player::SendInitialPacketsAfterAddToMap()
     // raid downscaling - send difficulty to player
     if (GetMap()->IsRaid())
     {
-        if (GetMap()->GetDifficulty() != GetRaidDifficulty())
-        {
-            StoreRaidMapDifficulty();
-            SendRaidDifficulty(GetGroup() != NULL, GetStoredRaidDifficulty());
-        }
+        DifficultyEntry const* difficulty = sDifficultyStore.LookupEntry(GetMap()->GetDifficulty());
+        SendRaidDifficulty(GetMap()->GetDifficulty());
     }
-    else if (GetRaidDifficulty() != GetStoredRaidDifficulty())
-        SendRaidDifficulty(GetGroup() != NULL);
+    else if (GetMap()->IsNonRaidDungeon())
+        SendDungeonDifficulty();
 
     m_battlePetMgr->SendBattlePetJournal();
     m_battlePetMgr->SendBattlePetJournalLock();
@@ -26367,6 +26367,38 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
     }
     else
         SendEquipError(msg, NULL, NULL, item->itemid);
+}
+
+DifficultyID Player::GetDifficulty(MapEntry const* mapEntry) const
+{
+    if (!mapEntry->IsRaid())
+        return m_dungeonDifficulty;
+
+    return m_raidDifficulty;
+}
+
+DifficultyID Player::CheckLoadedDungeonDifficultyID(DifficultyID difficulty)
+{
+    DifficultyEntry const* difficultyEntry = sDifficultyStore.LookupEntry(difficulty);
+    if (!difficultyEntry)
+        return DIFFICULTY_NORMAL;
+
+    if (difficultyEntry->maptype != MAP_INSTANCE)
+        return DIFFICULTY_NORMAL;
+
+    return difficulty;
+}
+
+DifficultyID Player::CheckLoadedRaidDifficultyID(DifficultyID difficulty)
+{
+    DifficultyEntry const* difficultyEntry = sDifficultyStore.LookupEntry(difficulty);
+    if (!difficultyEntry)
+        return DIFFICULTY_10MAN_NORMAL;
+
+    if (difficultyEntry->maptype != MAP_RAID)
+        return DIFFICULTY_10MAN_NORMAL;
+
+    return difficulty;
 }
 
 uint32 Player::CalculateTalentsPoints() const

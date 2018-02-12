@@ -1286,7 +1286,7 @@ struct DifficultyEntry
 {
     uint32 DiffID;
     uint32 DownscaleID;
-    //uint32 Type;
+    uint32 maptype;
     //uint32
     //uint32
     //uint32 SpawnMode;

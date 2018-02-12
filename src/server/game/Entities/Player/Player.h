@@ -2393,34 +2393,13 @@ class Player : public Unit, public GridObject<Player>
         return 0;
     }
 
-    DifficultyID GetDifficulty(bool isRaid) const
-    {
-        return isRaid ? m_raidDifficulty : m_dungeonDifficulty;
-    }
-    DifficultyID GetDungeonDifficulty() const
-    {
-        return m_dungeonDifficulty;
-    }
-    DifficultyID GetRaidDifficulty() const
-    {
-        return m_raidDifficulty;
-    }
-    DifficultyID GetStoredRaidDifficulty() const
-    {
-        return m_raidMapDifficulty;
-    } // only for use in difficulty packet after exiting to raid map
-    void SetDungeonDifficulty(DifficultyID dungeon_difficulty)
-    {
-        m_dungeonDifficulty = dungeon_difficulty;
-    }
-    void SetRaidDifficulty(DifficultyID raid_difficulty)
-    {
-        m_raidDifficulty = raid_difficulty;
-    }
-    void StoreRaidMapDifficulty()
-    {
-        m_raidMapDifficulty = GetMap()->GetDifficulty();
-    }
+    DifficultyID GetDifficulty(MapEntry const* mapEntry) const;
+    DifficultyID GetDungeonDifficulty() const { return m_dungeonDifficulty; }
+    DifficultyID GetRaidDifficulty() const { return m_raidDifficulty; }
+    void SetDungeonDifficulty(DifficultyID dungeon_difficulty) { m_dungeonDifficulty = dungeon_difficulty; }
+    void SetRaidDifficulty(DifficultyID raid_difficulty) { m_raidDifficulty = raid_difficulty; }
+    static DifficultyID CheckLoadedDungeonDifficultyID(DifficultyID difficulty);
+    static DifficultyID CheckLoadedRaidDifficultyID(DifficultyID difficulty);
 
     bool UpdateSkill(uint32 skill_id, uint32 step);
     bool UpdateSkillPro(uint16 skillId, int32 chance, uint32 step);
@@ -2524,7 +2503,7 @@ class Player : public Unit, public GridObject<Player>
     void SendAutoRepeatCancel(Unit* target);
     void SendExplorationExperience(uint32 Area, uint32 Experience);
 
-    void SendDungeonDifficulty(bool IsInGroup);
+    void SendDungeonDifficulty(/*bool IsInGroup*/);
     void SendRaidDifficulty(bool IsInGroup, int32 forcedDifficulty = -1);
     void ResetInstances(uint8 method, bool isRaid);
     void SendResetInstanceSuccess(uint32 MapId);
@@ -3012,7 +2991,7 @@ class Player : public Unit, public GridObject<Player>
     {
         return m_boundInstances [difficulty];
     }
-    InstanceSave* GetInstanceSave(uint32 mapid, bool raid);
+    InstanceSave* GetInstanceSave(uint32 mapid);
     void UnbindInstance(uint32 mapid, DifficultyID difficulty, bool unload = false);
     void UnbindInstance(BoundInstancesMap::iterator &itr, DifficultyID difficulty, bool unload = false);
     InstancePlayerBind* BindToInstance(InstanceSave* save, bool permanent, bool load = false);
