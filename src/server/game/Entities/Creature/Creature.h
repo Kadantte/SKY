@@ -171,6 +171,29 @@ struct CreatureTemplate
         // if can tame exotic then can tame any tameable
         return canTameExotic || !IsExotic();
     }
+
+    static int32 DiffToDiffIndex(uint32 difficulty)
+    {
+        switch (difficulty)
+        {
+        case DIFFICULTY_NONE:
+        case DIFFICULTY_NORMAL:
+        case DIFFICULTY_10MAN_NORMAL:
+        case DIFFICULTY_40MAN:
+            return -1;
+        case DIFFICULTY_HEROIC:
+        case DIFFICULTY_25MAN_NORMAL:
+            return 0;
+        case DIFFICULTY_10MAN_HEROIC:
+        case DIFFICULTY_CHALLENGE:
+            return 1;
+        case DIFFICULTY_25MAN_HEROIC:
+            return 2;
+        case DIFFICULTY_25MAN_LFR:
+        default:
+            return -1;
+        }
+    }
 };
 
 // Benchmarked: Faster than std::map (insert/find)
