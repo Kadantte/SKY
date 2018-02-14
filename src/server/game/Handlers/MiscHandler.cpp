@@ -1793,25 +1793,35 @@ void WorldSession::HandleResetInstancesOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket& recvData)
 {
-    SF_LOG_DEBUG("network", "MSG_SET_DUNGEON_DIFFICULTY");
+    SF_LOG_DEBUG("network", "Received: CMSG_SET_DUNGEON_DIFFICULTY");
 
-    uint32 mode;
-    recvData >> mode;
+    uint32 Difficulty;
+    recvData >> Difficulty;
 
-    if (mode > 14)
+    DifficultyEntry const* difficultyEntry = sDifficultyStore.LookupEntry(Difficulty);
+    if (!difficultyEntry)
     {
-        SF_LOG_DEBUG("network", "WorldSession::HandleSetDungeonDifficultyOpcode: player %d sent an invalid instance mode %d!", _player->GetGUIDLow(), mode);
+        SF_LOG_DEBUG("network", "%d sent an invalid instance mode %u!",
+            _player->GetGUIDLow(), Difficulty);
         return;
     }
 
-    if (DifficultyID(mode) == _player->GetDungeonDifficulty())
+    if (difficultyEntry->maptype != MAP_INSTANCE)
+    {
+        SF_LOG_DEBUG("network", "%d sent an non-dungeon instance mode %d!",
+            _player->GetGUIDLow(), difficultyEntry->DiffID);
+        return;
+    }
+
+    DifficultyID difficulty = DifficultyID(difficultyEntry->DiffID);
+    if (difficulty == _player->GetDungeonDifficulty())
         return;
 
     // cannot reset while in an instance
     Map* map = _player->FindMap();
     if (map && map->IsDungeon())
     {
-        SF_LOG_DEBUG("network", "WorldSession::HandleSetDungeonDifficultyOpcode: player (Name: %s, GUID: %u) tried to reset the instance while player is inside!",
+        SF_LOG_DEBUG("network", "player (Name: %s, GUID: %u) tried to reset the instance while player is inside!",
             _player->GetName().c_str(), _player->GetGUIDLow());
         return;
     }
@@ -1832,7 +1842,7 @@ void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket& recvData)
 
                 if (groupGuy->GetMap()->IsNonRaidDungeon())
                 {
-                    SF_LOG_DEBUG("network", "WorldSession::HandleSetDungeonDifficultyOpcode: player %d tried to reset the instance while group member (Name: %s, GUID: %u) is inside!",
+                    SF_LOG_DEBUG("network", "player %d tried to reset the instance while group member (Name: %s, GUID: %u) is inside!",
                         _player->GetGUIDLow(), groupGuy->GetName().c_str(), groupGuy->GetGUIDLow());
                     return;
                 }
@@ -1840,29 +1850,41 @@ void WorldSession::HandleSetDungeonDifficultyOpcode(WorldPacket& recvData)
             // the difficulty is set even if the instances can't be reset
             //_player->SendDungeonDifficulty(true);
             group->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, false, _player);
-            group->SetDungeonDifficulty(DifficultyID(mode));
+            group->SetDungeonDifficulty(DifficultyID(difficulty));
         }
     }
     else
     {
         _player->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, false);
-        _player->SetDungeonDifficulty(DifficultyID(mode));
+        _player->SetDungeonDifficulty(DifficultyID(difficulty));
         _player->SendDungeonDifficulty();
     }
 }
 
 void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
 {
-    SF_LOG_DEBUG("network", "MSG_SET_RAID_DIFFICULTY");
+    SF_LOG_DEBUG("network", "Received: CMSG_SET_RAID_DIFFICULTY");
 
-    uint32 mode;
-    recvData >> mode;
+    uint32 Difficulty;
+    recvData >> Difficulty;
 
-    if (mode > 14)
+    DifficultyEntry const* difficultyEntry = sDifficultyStore.LookupEntry(Difficulty);
+    if (!difficultyEntry)
+     {
+         SF_LOG_DEBUG("network", "%d sent an invalid instance mode %u!",
+             _player->GetGUIDLow(), Difficulty);
+         return;
+     }
+    if (difficultyEntry->maptype != MAP_RAID)
     {
-        SF_LOG_ERROR("network", "WorldSession::HandleSetRaidDifficultyOpcode: player %d sent an invalid instance mode %d!", _player->GetGUIDLow(), mode);
+        SF_LOG_DEBUG("network", "%s sent an non-raid instance mode %u!",
+            _player->GetGUIDLow(), difficultyEntry->DiffID);
         return;
     }
+
+    DifficultyID difficulty = DifficultyID(difficultyEntry->DiffID);
+    if (difficulty == _player->GetRaidDifficulty())
+        return;
 
     // cannot reset while in an instance
     Map* map = _player->FindMap();
@@ -1871,10 +1893,7 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
         SF_LOG_DEBUG("network", "WorldSession::HandleSetRaidDifficultyOpcode: player %d tried to reset the instance while inside!", _player->GetGUIDLow());
         return;
     }
-
-    if (DifficultyID(mode) == _player->GetRaidDifficulty())
-        return;
-
+    
     Group* group = _player->GetGroup();
     if (group)
     {
@@ -1898,13 +1917,13 @@ void WorldSession::HandleSetRaidDifficultyOpcode(WorldPacket& recvData)
             // the difficulty is set even if the instances can't be reset
             //_player->SendDungeonDifficulty(true);
             group->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, true, _player);
-            group->SetRaidDifficulty(DifficultyID(mode));
+            group->SetRaidDifficulty(DifficultyID(difficulty));
         }
     }
     else
     {
         _player->ResetInstances(INSTANCE_RESET_CHANGE_DIFFICULTY, true);
-        _player->SetRaidDifficulty(DifficultyID(mode));
+        _player->SetRaidDifficulty(DifficultyID(difficulty));
     }
 }
 
