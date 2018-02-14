@@ -265,12 +265,12 @@ class Group
         void SetMemberRole(uint64 guid, uint32 role);
         uint32 GetMemberRole(uint64 guid) const;
 
-        DifficultyID GetDifficulty(bool isRaid) const;
-        DifficultyID GetDungeonDifficulty() const;
-        DifficultyID GetRaidDifficulty() const;
+        DifficultyID GetDifficulty(MapEntry const* mapEntry) const;
+        DifficultyID GetDungeonDifficulty() const { return m_dungeonDifficulty; }
+        DifficultyID GetRaidDifficulty() const { return m_raidDifficulty; }
         void SetDungeonDifficulty(DifficultyID difficulty);
         void SetRaidDifficulty(DifficultyID difficulty);
-        uint16 InInstance();
+        //uint16 InInstance();
         bool InCombatToInstance(uint32 instanceId);
         void ResetInstances(uint8 method, bool isRaid, Player* SendMsgTo);
 
