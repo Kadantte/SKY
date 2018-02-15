@@ -69,7 +69,7 @@ void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recvData*/)
     size_t lockoutPos = data.bitwpos();
     data.WriteBits(0, 20);  // Lockout placeholder
 
-    for (uint8 i = 0; i < 14; ++i)
+    for (uint8 i = 0; i < 15; ++i)
     {
         Player::BoundInstancesMap boundInstances = _player->GetBoundInstances(DifficultyID(i));
         for (Player::BoundInstancesMap::const_iterator itr = boundInstances.begin(); itr != boundInstances.end(); ++itr)

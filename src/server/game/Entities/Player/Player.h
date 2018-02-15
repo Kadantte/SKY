@@ -2985,7 +2985,7 @@ class Player : public Unit, public GridObject<Player>
     uint32 m_HomebindTimer;
     bool m_InstanceValid;
     // permanent binds and solo binds by difficulty
-    BoundInstancesMap m_boundInstances [14];
+    BoundInstancesMap m_boundInstances [15];
     InstancePlayerBind* GetBoundInstance(uint32 mapid, DifficultyID difficulty);
     BoundInstancesMap& GetBoundInstances(DifficultyID difficulty)
     {

@@ -84,7 +84,7 @@ Group::~Group()
     // it is undefined whether objectmgr (which stores the groups) or instancesavemgr
     // will be unloaded first so we must be prepared for both cases
     // this may unload some instance saves
-    for (uint8 i = 0; i < 14; ++i)
+    for (uint8 i = 0; i < 15; ++i)
         for (BoundInstancesMap::iterator itr2 = m_boundInstances[i].begin(); itr2 != m_boundInstances[i].end(); ++itr2)
             itr2->second.save->RemoveGroup(this);
 
@@ -660,7 +660,7 @@ void Group::ChangeLeader(uint64 newLeaderGuid)
         SQLTransaction trans = CharacterDatabase.BeginTransaction();
 
         // Remove the groups permanent instance bindings
-        for (uint8 i = 0; i < 14; ++i)
+        for (uint8 i = 0; i < 15; ++i)
         {
             for (BoundInstancesMap::iterator itr = m_boundInstances[i].begin(); itr != m_boundInstances[i].end();)
             {

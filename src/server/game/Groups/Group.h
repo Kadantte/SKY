@@ -353,7 +353,7 @@ class Group
         ItemQualities       m_lootThreshold;
         uint64              m_looterGuid;
         Rolls               RollId;
-        BoundInstancesMap   m_boundInstances[14];
+        BoundInstancesMap   m_boundInstances[15];
         uint8*              m_subGroupsCounts;
         uint64              m_guid;
         uint32              m_counter;                      // used only in SMSG_GROUP_LIST
